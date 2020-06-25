@@ -1,0 +1,19 @@
+version: '3.7'
+
+networks:
+  mongomap:
+    name: mongomap
+
+volumes:
+  dbdata:
+
+services:
+  db:
+    image: mongo:4.2.7
+    networks:
+      - mongomap
+    ports:
+      - 27017:27017
+    restart: always
+    volumes:
+      - dbdata:/data/db
