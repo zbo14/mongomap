@@ -160,8 +160,6 @@ const main = async (program, collection, file) => {
 
   warn('[-] Connected to database')
 
-  let count = 0
-
   for (let i = 0; i < lines.length; i += 1e3) {
     let batch = lines.slice(i, i + 1e3)
 
@@ -172,14 +170,10 @@ const main = async (program, collection, file) => {
     const ops = generateOps(program, collection, batch, file)
 
     await coll.bulkWrite(ops, { ordered: false })
-      .then(() => ++count)
       .catch(err => err.message.includes('duplicate key error') || error('[!] ' + err.message))
   }
 
-  count
-    ? warn(`[-] Wrote ${count} new ${collection}`)
-    : warn(`[-] No new ${collection} to write`)
-
+  warn(`[-] Wrote documents to ${collection} collection`)
   warn('[-] Closing connection')
 
   client.close()
