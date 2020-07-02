@@ -1,8 +1,12 @@
 {
   "name": "mongomap",
   "version": "0.0.0",
-  "description": "",
+  "description": "A CLI to store/fetch bug bounty information in mongodb",
   "bin": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zbo14/mongomap"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,6 +16,7 @@
     "cidr",
     "domains",
     "ip-address",
+    "ip-ranges",
     "mongodb",
     "network",
     "network-mapping",
@@ -20,6 +25,7 @@
   "author": "Zachary Balder",
   "license": "MIT",
   "dependencies": {
+    "commander": "5.1.0",
     "mongodb": "3.5.9"
   },
   "devDependencies": {

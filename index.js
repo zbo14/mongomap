@@ -2,6 +2,7 @@
 
 'use strict'
 
+const commander = require('commander')
 const fs = require('fs')
 const { MongoClient } = require('mongodb')
 const path = require('path')
@@ -9,6 +10,13 @@ const path = require('path')
 const banner = fs.readFileSync(path.join(__dirname, 'banner'), 'utf8')
 const error = msg => console.error('\x1b[31m%s\x1b[0m', msg)
 const warn = msg => console.warn('\x1b[33m%s\x1b[0m', msg)
+
+const checkCollection = collection => {
+  if (!['domains', 'ips', 'ranges', 'urls'].includes(collection)) {
+    error('[!] Expected <collection> to be one of ["domains","ips","ranges","urls"]')
+    process.exit(1)
+  }
+}
 
 const init = async () => {
   const client = await MongoClient.connect('mongodb://127.0.0.1', {
@@ -40,42 +48,6 @@ const getCollection = async (db, collection) => {
 
   return coll
 }
-
-/**
- * @typedef {Object}  Domain
- *
- * @property {Date}    created
- * @property {String}  name
- * @property {String}  parent
- * @property {String}  program
- */
-
-/**
- * @typedef {Object}  IP
- *
- * @property {String}  address
- * @property {Date}    created
- * @property {String}  program
- */
-
-/**
- * @typedef {Object}  Range
- *
- * @property {Number}  asn
- * @property {String}  cidr
- * @property {Date}    created
- * @property {String}  program
- */
-
-/**
- * @typedef {Object}  URL
- *
- * @property {Date}     created
- * @property {String}   domain
- * @property {String}   href
- * @property {String}   program
- * @property {Boolean}  secure
- */
 
 const generateOps = (program, collection, batch) => {
   const docs = []
@@ -110,20 +82,24 @@ const generateOps = (program, collection, batch) => {
   return docs.map(document => ({ insertOne: { document } }))
 }
 
-const main = async (program, collection, file) => {
-  program = (program || '').toLowerCase().trim()
-  collection = (collection || '').toLowerCase().trim()
-  file = (file || '').trim()
+const generateOpts = collection => {
+  const opts = { projection: { _id: 0 } }
 
-  if (!collection || !program || !file) {
-    error('[!] Please specify <program>, <collection>, and <file>')
-    process.exit(1)
+  if (collection === 'domains') {
+    opts.projection.name = 1
+  } else if (collection === 'ips') {
+    opts.projection.address = 1
+  } else if (collection === 'ranges') {
+    opts.projection.cidr = 1
+  } else {
+    opts.projection.href = 1
   }
 
-  if (!['domains', 'ips', 'ranges', 'urls'].includes(collection)) {
-    error('[!] Expected <collection> to be one of ["domains","ips","ranges","urls"]')
-    process.exit(1)
-  }
+  return opts
+}
+
+const push = async (program, collection, file) => {
+  checkCollection(collection)
 
   let asn
 
@@ -173,7 +149,7 @@ const main = async (program, collection, file) => {
       .catch(err => err.message.includes('duplicate key error') || error('[!] ' + err.message))
   }
 
-  warn(`[-] Wrote documents to ${collection} collection`)
+  warn('[-] Wrote ' + collection)
   warn('[-] Closing connection')
 
   client.close()
@@ -181,7 +157,60 @@ const main = async (program, collection, file) => {
   warn('[-] Done!')
 }
 
-main(...process.argv.slice(2)).catch(err => {
-  error(err)
-  process.exit(1)
-})
+const pull = async (program, collection, opts) => {
+  checkCollection(collection)
+
+  error(banner)
+
+  const { client, db } = await init()
+  const coll = await getCollection(db, collection)
+
+  warn('[-] Connected to database')
+
+  const today = new Date()
+
+  today.setHours(0)
+  today.setMinutes(0)
+  today.setSeconds(0)
+  today.setMilliseconds(0)
+
+  const created = { $gte: today }
+  const query = { created, program }
+
+  opts = generateOpts(collection)
+
+  warn('[-] Finding ' + collection)
+
+  const cursor = coll.find(query, opts)
+  const results = await cursor.toArray()
+
+  results.forEach(result => {
+    const [key] = Object.keys(result)
+    console.log(result[key])
+  })
+
+  warn('[-] Closing connection')
+
+  client.close()
+
+  warn('[-] Done!')
+}
+
+const program = new commander.Command()
+
+program.version('0.0.0')
+
+program
+  .command('push <program> <collection> <file>')
+  .description('store the contents of a file in the database')
+  .action(push)
+
+program
+  .command('pull <program> <collection>')
+  .description('pull documents that were added to the database today')
+  .action(pull)
+
+program
+  .parseAsync(process.argv)
+  .catch(err => error(err) || 1)
+  .then(process.exit)
