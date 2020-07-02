@@ -4,6 +4,8 @@ A CLI to store/fetch bug bounty information in mongodb!
 
 ## Install
 
+`npm i @zbo14/mongomap`
+
 ## Usage
 
 ```

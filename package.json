@@ -1,8 +1,10 @@
 {
-  "name": "mongomap",
+  "name": "@zbo14/mongomap",
   "version": "0.0.0",
   "description": "A CLI to store/fetch bug bounty information in mongodb",
-  "bin": "index.js",
+  "bin": {
+    "mongomap": "index.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/zbo14/mongomap"
@@ -29,7 +31,7 @@
     "mongodb": "3.5.9"
   },
   "devDependencies": {
-    "eslint": "7.2.0",
+    "eslint": "7.3.1",
     "eslint-config-standard": "14.1.1",
     "eslint-plugin-import": "2.21.2",
     "eslint-plugin-node": "11.1.0",
