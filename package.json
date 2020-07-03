@@ -1,6 +1,6 @@
 {
   "name": "@zbo14/mongomap",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A CLI to store/fetch bug bounty information in mongodb",
   "bin": {
     "mongomap": "index.js"

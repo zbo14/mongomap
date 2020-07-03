@@ -65,7 +65,10 @@ const generateOps = (program, collection, batch) => {
       docs.push({ created, name, parent, program })
     })
   } else if (collection === 'ips') {
-    batch.forEach(address => docs.push({ address, created, program }))
+    batch.forEach(address => {
+      const privateIP = address.startsWith('10.') || address.startsWith('192.168.')
+      privateIP || docs.push({ address, created, program })
+    })
   } else if (collection === 'ranges') {
     batch.forEach(({ asn, cidr }) => docs.push({ asn, cidr, created, program }))
   } else {
@@ -198,7 +201,7 @@ const pull = async (program, collection, opts) => {
 
 const program = new commander.Command()
 
-program.version('0.0.0')
+program.version('0.1.0')
 
 program
   .command('push <program> <collection> <file>')
